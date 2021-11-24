@@ -10,7 +10,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import './model/data.dart';
 
-final List<String> imgList = ['assets/images/step_1.png', 'assets/images/step_2.png', 'assets/images/step_3.png'];
+final List<String> imgList = [
+  'assets/images/step_1.png',
+  'assets/images/step_2.png',
+  'assets/images/step_3.png'
+];
 
 class BodyJson {
   final String id;
@@ -29,7 +33,12 @@ class BodyJson {
     );
   }
 
-  Map<String, dynamic> toJson() => {'id': this.id, 'avatar': this.latitud, 'image': this.longitud, 'name': this.name};
+  Map<String, dynamic> toJson() => {
+        'id': this.id,
+        'avatar': this.latitud,
+        'image': this.longitud,
+        'name': this.name
+      };
 }
 
 class Response {
@@ -92,7 +101,8 @@ class FullscreenSliderDemo extends StatelessWidget {
         builder: (context) {
           final double height = MediaQuery.of(context).size.height;
           return CarouselSlider(
-            options: CarouselOptions(height: height, viewportFraction: 1, enlargeCenterPage: false),
+            options: CarouselOptions(
+                height: height, viewportFraction: 1, enlargeCenterPage: false),
             items: imgList
                 .map((item) => Container(
                       child: Center(
@@ -110,13 +120,14 @@ class FullscreenSliderDemo extends StatelessWidget {
         onPressed: () {
           _navigateToNextScreen(context);
         },
-        child: Icon(Icons.gps_fixed_sharp),
+        child: Icon(Icons.location_on),
       ),
     );
   }
 
   void _navigateToNextScreen(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => GoogleMapView()));
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => GoogleMapView()));
   }
 }
 
@@ -152,32 +163,39 @@ class MapSampleState extends State<MapSample> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      body: GoogleMap(
-        mapType: MapType.normal,
-        initialCameraPosition: _kGooglePlex,
-        onMapCreated: (GoogleMapController controller) {
-          _controller.complete(controller);
-        },
-        myLocationEnabled: true,
-        markers: Set<Marker>.of(_markers),
-        mapToolbarEnabled: false,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToTheLake,
-        child: Icon(Icons.directions_boat),
-      ),
-    );
+        body: GoogleMap(
+          mapType: MapType.normal,
+          initialCameraPosition: _kGooglePlex,
+          onMapCreated: (GoogleMapController controller) {
+            _controller.complete(controller);
+          },
+          myLocationEnabled: true,
+          markers: Set<Marker>.of(_markers),
+          mapToolbarEnabled: false,
+        ),
+        floatingActionButton: Padding(
+            padding: new EdgeInsets.only(left: 20),
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: FloatingActionButton(
+                onPressed: _goToTheLake,
+                child: Icon(Icons.location_searching),
+              ),
+            )));
   }
 
   Future<void> _goToTheLake() async {
     final GoogleMapController controller = await _controller.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(await getCurrentPosition()));
+    controller.animateCamera(
+        CameraUpdate.newCameraPosition(await getCurrentPosition()));
   }
 
   Future<CameraPosition> getCurrentPosition() async {
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
 
-    CameraPosition cameraPosition = CameraPosition(target: LatLng(6.1713677, -75.5875945), zoom: 15);
+    CameraPosition cameraPosition =
+        CameraPosition(target: LatLng(6.1713677, -75.5875945), zoom: 15);
 
     List<BodyJson> httpResponse = [
       BodyJson(
@@ -199,7 +217,11 @@ class MapSampleState extends State<MapSample> {
     response.forEach((element) {
       _currentCount++;
       print(element['lnt']);
-      _markers.add(Marker(markerId: MarkerId('id-$_currentCount'), position: LatLng(element['lnt'], element['lng']), infoWindow: InfoWindow(title: element['nameZone'])));
+      _markers.add(Marker(
+          markerId: MarkerId('id-$_currentCount'),
+          position: LatLng(element['lnt'], element['lng']),
+          onTap: () => _onTapData(element),
+          infoWindow: InfoWindow(title: element['nameZone'])));
     });
 
     httpResponse.forEach((element) {
@@ -213,12 +235,73 @@ class MapSampleState extends State<MapSample> {
     return cameraPosition;
   }
 
+  _onTapData(dynamic element) {
+    showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                ListTile(
+                  leading: Icon(Icons.location_on),
+                  dense: true,
+                  title: Text(element['nameZone']),
+                  subtitle: Text("Zona"),
+                ),
+                ListTile(
+                  leading: Icon(Icons.access_alarm),
+                  dense: true,
+                  title: Text(element['horaApertura']),
+                  subtitle: Text("Hora Apertura"),
+                ),
+                ListTile(
+                  leading: Icon(Icons.access_alarm),
+                  dense: true,
+                  title: Text(element['horaCierre']),
+                  subtitle: Text("Hora Cierre"),
+                ),
+                ListTile(
+                  leading: Icon(Icons.location_city),
+                  dense: true,
+                  title: Text(element['dirCmsZonas']),
+                  subtitle: Text("Dirección"),
+                ),
+                ListTile(
+                    leading: Icon(Icons.pedal_bike_sharp),
+                    dense: true,
+                    title: Text(element['maxCelBicicletas'].toString()),
+                    subtitle: Text("Bicicletas")),
+                ListTile(
+                  leading: Icon(Icons.car_repair),
+                  dense: true,
+                  title: Text(element['maxCelCar'].toString()),
+                  subtitle: Text("Carros"),
+                ),
+                ListTile(
+                  leading: Icon(Icons.directions_bike),
+                  dense: true,
+                  title: Text(element['maxCelMoto'].toString()),
+                  subtitle: Text("Motos"),
+                )
+              ],
+            ),
+          );
+        });
+  }
+
   Future<List<dynamic>> getAllMarkers(Position position) async {
     print(position.latitude.toString());
     print(position.longitude.toString());
 
-    var makeRequest = await http.post(Uri.parse('https://api.cparking.co/city/getmarkers'),
-        headers: {"Content-type": "application/json"}, body: jsonEncode({"lnt_1": 6.1500, "lng_1": -75.6000, "lnt_2": 6.1500, "lng_2": -75.6000}));
+    var makeRequest = await http.post(
+        Uri.parse('https://api.cparking.co/city/getmarkers'),
+        headers: {"Content-type": "application/json"},
+        body: jsonEncode({
+          "lnt_1": 6.1500,
+          "lng_1": -75.6000,
+          "lnt_2": 6.1500,
+          "lng_2": -75.6000
+        }));
 
     var jsonBody = json.decode(makeRequest.body);
 
